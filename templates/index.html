@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Atendimento inteligente e recomendações personalizadas do SmartServeAI.">
+  <title>SmartServeAI | Atendimento inteligente</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="SmartServeAI - página inicial">SmartServe<span>AI</span></a>
+    <p>Seu atendimento, mais inteligente e pessoal.</p>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="titulo-principal">
+      <p class="eyebrow">ASSISTENTE DE E-COMMERCE</p>
+      <h1 id="titulo-principal">Como podemos ajudar?</h1>
+      <p>Conte o que você procura e receba sugestões pensadas para você.</p>
+    </section>
+
+    <section class="steps" aria-labelledby="titulo-etapas">
+      <h2 id="titulo-etapas">Como funciona em 3 passos</h2>
+      <ol class="steps-list">
+        <li class="step-card">
+          <span class="step-number" aria-hidden="true">01</span>
+          <h3>Conte o que precisa</h3>
+          <p>Escolha um interesse e descreva como podemos ajudar.</p>
+        </li>
+        <li class="step-card">
+          <span class="step-number" aria-hidden="true">02</span>
+          <h3>Receba sugestões</h3>
+          <p>O assistente encontra produtos relacionados ao seu pedido.</p>
+        </li>
+        <li class="step-card">
+          <span class="step-number" aria-hidden="true">03</span>
+          <h3>Veja o resultado</h3>
+          <p>Confira a resposta e os bastidores do atendimento.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-formulario">
+      <h2 id="titulo-formulario">Fale com o SmartServeAI</h2>
+      <p class="quick-test-label">Ou experimente um exemplo rápido:</p>
+      <div class="quick-tests" role="group" aria-label="Preencher um exemplo de atendimento">
+        <button class="quick-chip" type="button" data-nome="Alex" data-interesse="trabalho"
+                data-msg="Estou organizando meu espaço de Home Office.">
+          Home Office
+        </button>
+        <button class="quick-chip" type="button" data-nome="Alex" data-interesse="programacao"
+                data-msg="Quero aprender mais sobre programação.">
+          Programação
+        </button>
+        <button class="quick-chip" type="button" data-nome="Alex" data-interesse="musica"
+                data-msg="Procuro algo para ouvir minhas músicas com qualidade.">
+          Música
+        </button>
+      </div>
+      <form id="atendimento-form">
+        <label for="nome">Seu nome</label>
+        <input id="nome" name="nome" type="text" autocomplete="name" required maxlength="80"
+               placeholder="Ex.: Andressa">
+
+        <label for="interesse">Qual é o seu interesse?</label>
+        <select id="interesse" name="interesse" required>
+          <option value="" disabled selected>Selecione uma opção</option>
+          <option value="trabalho">Trabalho</option>
+          <option value="estudos">Estudos</option>
+          <option value="musica">Música</option>
+          <option value="conforto">Conforto</option>
+          <option value="programacao">Programação</option>
+        </select>
+
+        <label for="mensagem">Sua mensagem</label>
+        <textarea id="mensagem" name="mensagem" rows="4" required maxlength="1000"
+                  placeholder="Descreva como podemos ajudar..."></textarea>
+        <button id="submit-button" type="submit">Enviar mensagem</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="resultado" class="results" aria-labelledby="titulo-resultado" hidden>
+      <h2 id="titulo-resultado">Seu atendimento</h2>
+      <article class="result-card" aria-labelledby="titulo-resposta">
+        <span class="result-badge">💬 Resposta do Assistente</span>
+        <h3 id="titulo-resposta">Resposta personalizada</h3>
+        <p id="resposta"></p>
+      </article>
+      <article class="result-card" aria-labelledby="titulo-produtos">
+        <span class="result-badge">🛍️ Produtos Recomendados</span>
+        <h3 id="titulo-produtos">Produtos recomendados</h3>
+        <ul id="produtos"></ul>
+      </article>
+      <article class="result-card prompt-card" aria-labelledby="titulo-prompt">
+        <span class="result-badge">⚙️ Bastidores da IA: Engenharia de Prompt</span>
+        <h3 id="titulo-prompt">Prompt estruturado</h3>
+        <pre id="prompt"></pre>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>SmartServeAI — protótipo acadêmico com dados e respostas simulados.</p>
+  </footer>
+
+  <script>
+    const form = document.querySelector("#atendimento-form");
+    const statusMessage = document.querySelector("#status");
+    const submitButton = document.querySelector("#submit-button");
+    const resultSection = document.querySelector("#resultado");
+
+    document.querySelectorAll(".quick-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        form.elements.nome.value = chip.dataset.nome;
+        form.elements.interesse.value = chip.dataset.interesse;
+        form.elements.mensagem.value = chip.dataset.msg;
+        form.elements.nome.focus();
+        statusMessage.textContent = `Exemplo ${chip.textContent.trim()} preenchido.`;
+      });
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      statusMessage.textContent = "🔎 Consultando API pública do Mercado Livre...";
+      const originalButtonText = submitButton.textContent;
+      submitButton.textContent = "Consultando...";
+      submitButton.disabled = true;
+
+      try {
+        const dados = Object.fromEntries(new FormData(form));
+        const response = await fetch("/api/atendimento", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dados)
+        });
+        const resultado = await response.json();
+        if (!response.ok) throw new Error(resultado.erro || "Não foi possível processar o atendimento.");
+
+        document.querySelector("#resposta").textContent = resultado.resposta;
+        document.querySelector("#prompt").textContent = resultado.prompt;
+        const listaProdutos = document.querySelector("#produtos");
+        listaProdutos.replaceChildren();
+        if (resultado.produtos.length) {
+          resultado.produtos.forEach((produto) => {
+            const item = document.createElement("li");
+            const detalhes = document.createElement("span");
+            detalhes.className = "product-details";
+            const preco = Number(produto.preco).toLocaleString("pt-BR", {
+              style: "currency", currency: "BRL"
+            });
+            detalhes.textContent = `${produto.nome} — ${preco}`;
+            const link = document.createElement("a");
+            link.href = produto.permalink;
+            link.textContent = "Ver Produto";
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.className = "product-link";
+            item.append(detalhes, link);
+            listaProdutos.append(item);
+          });
+        } else {
+          const item = document.createElement("li");
+          item.textContent = "Nenhum produto encontrado para esse interesse.";
+          listaProdutos.append(item);
+        }
+        resultSection.hidden = false;
+        statusMessage.textContent = "Atendimento concluído.";
+      } catch (error) {
+        statusMessage.textContent = error.message;
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = originalButtonText;
+      }
+    });
+  </script>
+</body>
+</html>
